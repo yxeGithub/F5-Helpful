@@ -29,11 +29,12 @@
 ###########################################################################################################
 #                                                                                                         #
 # ver. 0.10                                                                                               #
-# ver. 0.20       Denis F5 - YXESE - Modified to work on OSX and updates.                                 #
-# ver. 0.21	  Denis F5 - YXESE - Modified to change Declare -A; not -a                                #
-# ver. 0.22	  Denis F5 - YXESE - Modified to work with partitions                                     #
+# ver. 0.20 Denis F5 - YXESE - Modified to work on OSX and updates.                                       #
+# ver. 0.21 Denis F5 - YXESE - Modified to change Declare -A; not -a                                      #
+# ver. 0.22 Denis F5 - YXESE - Modified to work with partitions                                           #
 #                                                                                                         #
-#########################################################################
+###########################################################################################################
+
 # ****************************** Important ******************************
 
 #if you get tr errors then run these 2 commands at the command prompt
@@ -67,11 +68,10 @@ if [ $er -ne 0 ]; then
 fi
 
 confFile="$1"
-partition="$2"
-if [ -z "$2" ]
-  then
-    partition="Common"
+if [ "$#" -ne 1 ]; then
+    echo "Illegal number of parameters"
 fi
+
 DEBUG=1 		# Need more details ? Set any thing !
 # Prepare bigip.conf file 
 # Since iApp created Virtual Servers not important for us, erase those lines 'app.service' and '*.app' in where they stands
@@ -85,7 +85,7 @@ declare -A poolArray				#OK
 declare -A monitorArray				#OK
 declare -A policyArray				#OK
 declare -A iruleArray				#OK
-declare -A snatTranslationArray		        #OK
+declare -A snatTranslationArray		#OK
 declare -A snatPoolArray			#OK
 declare -A dataGroupArray			#OK
 declare -A persistArray				#OK
@@ -161,7 +161,8 @@ get_virtualServer(){
 
 	#read -a tempArray <<< $( grep -nE "ltm virtual " ${iAppFreeConfFile} | sed -e 's/ltm virtual \/Common\//\:/g' -e 's/{ \|{//g' | tr '\n' ' ' )
 	#read -a tempArray <<< $( grep -nE "ltm virtual " ${iAppFreeConfFile} | sed -e 's/ltm virtual \/Common\//\:/g' -e 's/{//g' | tr '\n' ' ' )
-	read -a tempArray <<< $( grep -nE "ltm virtual " ${iAppFreeConfFile} | sed -e 's/ltm virtual \/'${partition}'\//\:/g' -e 's/{//g' | tr '\n' ' ' )
+	
+	read -a tempArray <<< $( grep -nE "ltm virtual " ${iAppFreeConfFile} | sed -e 's/ltm virtual \/.*\//\:/g' -e 's/{//g' | tr '\n' ' ' )
 		[ $DEBUG ] && declare -p tempArray | tr " " "\n" # debug
 
 	if [ ${#tempArray[@]} -ne 0 ]; then 
@@ -229,7 +230,7 @@ get_pools(){
 	declare -a poolUsedInRules
 	local name start end res 
 
-	read -a tempArray <<< $( grep -nE "ltm pool " ${iAppFreeConfFile} | sed -e 's/ltm pool \/'${partition}'\//\:/g' -e 's/ {//g' -e 's/{ \|{//g' -e 's,}$,,g' | tr '\n' ' ' )
+	read -a tempArray <<< $( grep -nE "ltm pool " ${iAppFreeConfFile} | sed -e 's/ltm pool \/.*\//\:/g' -e 's/ {//g' -e 's/{ \|{//g' -e 's,}$,,g' | tr '\n' ' ' )
 	#read -a tempArray <<< $( grep -nE "ltm pool " ${iAppFreeConfFile} | sed -e 's/ltm pool \/Common\//\:/g' -e 's/{ \|{//g' -e 's/{ \|{//g' -e 's,}$,,g' | tr '\n' ' ' )
 	[ $DEBUG ] && declare -p tempArray | tr ' ' '\n' # debug
 	
@@ -284,7 +285,7 @@ get_policy(){
 	declare -a tempArray
 	local name start end res
 
-	read -a tempArray <<< $( grep -nE "ltm policy " ${iAppFreeConfFile} | sed -e 's/ltm policy \/'${partition}'\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
+	read -a tempArray <<< $( grep -nE "ltm policy " ${iAppFreeConfFile} | sed -e 's/ltm policy \/.*\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
 	# read -a tempArray <<< $( grep -nE "ltm policy " ${iAppFreeConfFile} | sed -e 's/ltm policy \/Common\//\:/g' -e 's/{ \|{//g' | tr '\n' ' ' )
 
 	[ $DEBUG ] && echo -e "DEBUG - policies temp array;\n" && declare -p tempArray | tr ' ' '\n' # DEBUG
@@ -325,7 +326,7 @@ get_iRules(){
 	declare -a tempArray
 	local start end name res
 	
-	read -a tempArray <<< $( grep -nE "ltm rule " ${iAppFreeConfFile} | sed -e 's/ltm rule \/'${partition}'\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
+	read -a tempArray <<< $( grep -nE "ltm rule " ${iAppFreeConfFile} | sed -e 's/ltm rule \/.*\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
 		[ $DEBUG ] && echo "IRULE first"
 		[ $DEBUG ] && declare -p tempArray | tr " " "\n" # debug
 		
@@ -459,7 +460,7 @@ get_snatTranslation(){
 	declare -a tempArray
 	local start end name res
 	
-	read -a tempArray <<< $( grep -nE "ltm snat-translation " ${iAppFreeConfFile} | sed -e 's/ltm snat-translation \/'${partition}'\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
+	read -a tempArray <<< $( grep -nE "ltm snat-translation " ${iAppFreeConfFile} | sed -e 's/ltm snat-translation \/.*\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
 		
 	if [ ${#tempArray[@]} -ne 0 ]; then	
 		for (( i = 0; i < ${#tempArray[@]}; i++ )){
@@ -490,7 +491,7 @@ get_snatPool(){
 	declare -a tempArray
 	local start end name res
 	
-	read -a tempArray <<< $( grep -nE "ltm snatpool " ${iAppFreeConfFile} | sed -e 's/ltm snatpool \/'${partition}'\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
+	read -a tempArray <<< $( grep -nE "ltm snatpool " ${iAppFreeConfFile} | sed -e 's/ltm snatpool \/.*\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
 		
 	if [ ${#tempArray[@]} -ne 0 ]; then	
 		for (( i = 0; i < ${#tempArray[@]}; i++ )){
@@ -522,7 +523,7 @@ get_monitors(){
 	local start end name res
 	
 	#read -a tempArray <<< $( grep -nE "ltm monitor " ${iAppFreeConfFile} | sed -e 's/ltm monitor [a-zA-Z0-9\_\-]\+\ \/Common\//:/g' -e 's/ {//g' | tr '\n' ' ' )
-	read -a tempArray <<< $( grep -nE "ltm monitor " ${iAppFreeConfFile} | sed -e 's/ltm monitor [a-zA-Z0-9\_\-]*\ \/'${partition}'\//:/g' -e 's/ {//g' | tr '\n' ' ' )
+	read -a tempArray <<< $( grep -nE "ltm monitor " ${iAppFreeConfFile} | sed -e 's/ltm monitor [a-zA-Z0-9\_\-]*\ \/.*\//:/g' -e 's/ {//g' | tr '\n' ' ' )
 		
 	if [ ${#tempArray[@]} -ne 0 ]; then
 		for (( i = 0; i < ${#tempArray[@]}; i++ )){
@@ -551,7 +552,7 @@ get_persistence(){
 	declare -a tempArray
 	local start end name res
 	
-	read -a tempArray <<< $( grep -nE "ltm persistence " ${iAppFreeConfFile} | sed -e 's/ltm persistence [a-zA-Z0-9\_\-]*//g' -e 's/ \/'${partition}'\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
+	read -a tempArray <<< $( grep -nE "ltm persistence " ${iAppFreeConfFile} | sed -e 's/ltm persistence [a-zA-Z0-9\_\-]*//g' -e 's/ \/.*\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
 		
 	if [ ${#tempArray[@]} -ne 0 ]; then	
 		for (( i = 0; i < ${#tempArray[@]}; i++ )){
@@ -582,7 +583,7 @@ get_dataGroup(){
 	declare -a tempArray
 	local start end name res
 	
-	read -a tempArray <<< $( grep -nE "ltm data-group " ${iAppFreeConfFile} | sed -e 's/ltm data-group [a-zA-Z0-9\_\-]*//g' -e 's/ \/'${partition}'\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
+	read -a tempArray <<< $( grep -nE "ltm data-group " ${iAppFreeConfFile} | sed -e 's/ltm data-group [a-zA-Z0-9\_\-]*//g' -e 's/ \/.*\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
 		
 	if [ ${#tempArray[@]} -ne 0 ]; then
 		
@@ -612,7 +613,7 @@ get_profile(){
 	declare -a tempArray
 	local start end name res
 	
-	read -a tempArray <<< $( grep -nE "ltm profile " ${iAppFreeConfFile} | sed -e 's/ltm profile [a-zA-Z0-9\_\-]*//g' -e 's/ \/'${partition}'\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
+	read -a tempArray <<< $( grep -nE "ltm profile " ${iAppFreeConfFile} | sed -e 's/ltm profile [a-zA-Z0-9\_\-]*//g' -e 's/ \/.*\//\:/g' -e 's/ {//g' | tr '\n' ' ' )
 		
 	if [ ${#tempArray[@]} -ne 0 ]; then
 		for (( i = 0; i < ${#tempArray[@]}; i++ )){
@@ -906,7 +907,7 @@ do
 	# Fallback Persist
 	echo "${virt}" | grep -E "fallback-persistence " > /dev/null 2>&1
 	if [ $? -eq 0 ]; then
-		fallback=$( echo "${virt}" | grep "fallback-persistence " | sed -e 's/fallback-persistence \/'${partition}'\///g' -e 's/^[[:space:]]*//g' )
+		fallback=$( echo "${virt}" | grep "fallback-persistence " | sed -e 's/fallback-persistence \/.*\///g' -e 's/^[[:space:]]*//g' )
 		if [ $( echo $fallback | grep -E "\.app\/" ) ]; then 
 			fallback=$( echo ${fallback}__APP | cut -d "/" -f 2 )
 		fi
@@ -933,7 +934,7 @@ do
 	persistence=$( echo "${virt}" | grep -nE "^\s\s\s\spersist\s{" | cut -d ":" -f 1 )
 	if [ $persistence ]; then
 		blockEnd=$( echo "${virt}" | tail -n +${persistence} |  grep -m 1 -nE "^\s{4}}$" | cut -d ":" -f1 )
-		persistName=$( echo "${virt}" | sed -n ${persistence},$(( persistence + blockEnd -1))p | grep -E "\/'${partition}'\/[a-zA-Z0-9\_\-]+" | sed -e "s/\/'${partition}'\///g" -e "s/\ {//g" -e 's/^[[:space:]]*//g' )
+		persistName=$( echo "${virt}" | sed -n ${persistence},$(( persistence + blockEnd -1))p | grep -E "\/.*\/[a-zA-Z0-9\_\-]+" | sed -e "s/\/.*\///g" -e "s/\ {//g" -e 's/^[[:space:]]*//g' )
 		if [ $( echo $persistName | grep -E "\.app\/" ) ]; then # created by an iApp ?  
 			persistName=$( echo ${persistName}__APP | cut -d "/" -f2 )
 		fi
@@ -959,7 +960,7 @@ do
 	echo "${virt}" | grep -E "^\s\s\s\spool\s\/" > /dev/null 2>&1
 	if [ $? -eq 0 ]; then
 		declare -a monitorName
-		poolName=$( echo "$virt" | grep -E "^\s\s\s\spool\s\/" | sed -e "s/pool\ \/'${partition}'\///g" -e "s/^ *//g" )
+		poolName=$( echo "$virt" | grep -E "^\s\s\s\spool\s\/" | sed -e "s/pool\ \/.*\///g" -e "s/^ *//g" )
 		[ $DEBUG ] && echo "DEBUG - poolName ${poolName}" # DEBUG
 		if [ $( echo $poolName | grep -E "\.app\/" ) ]; then
 			poolName=$( echo ${poolName}__APP | cut -d "/" -f2 )
@@ -968,7 +969,7 @@ do
 		sed -n ${poolArray[$poolName]}p ${iAppFreeConfFile} | sed -e "s/[\_a-zA-Z0-9\-]\+\.app\///g" >> "$vsFileName"
 		# Parse monitors as well
 		#read -a monitorName <<< $( sed -n ${poolArray[$poolName]}p ${iAppFreeConfFile} | grep -E "^\s{4,12}monitor\s" | sed -e "s/^\s\{4,12\}monitor\s//g;s/min \(.*\) of //g" -e "s,{\|},,g" -e "s/\/Common\///g" -e "s/ and//g" -e "s/^[[:space:]]*//g" -e "s/ *$//g" | tr " " "\n" | sort -u | tr '\n' ' ' )
-		read -a monitorName <<< $( sed -n ${poolArray[$poolName]}p ${iAppFreeConfFile} | grep -E "^\s{4,12}monitor\s" | sed -e "s/^\s\{4,12\}monitor\s//g;s/min \(.*\) of //g" -e "s,[{}],,g" -e "s/\/'${partition}'\///g" -e "s/ and//g" -e "s/^[[:space:]]*//g" -e "s/ *$//g" | tr " " "\n" | sort -u | tr '\n' ' ' )
+		read -a monitorName <<< $( sed -n ${poolArray[$poolName]}p ${iAppFreeConfFile} | grep -E "^\s{4,12}monitor\s" | sed -e "s/^\s\{4,12\}monitor\s//g;s/min \(.*\) of //g" -e "s,[{}],,g" -e "s/\/.*\///g" -e "s/ and//g" -e "s/^[[:space:]]*//g" -e "s/ *$//g" | tr " " "\n" | sort -u | tr '\n' ' ' )
 		[ $DEBUG ] && echo -e "DEBUG - monitorName" && declare -p monitorName | tr ' ' '\n' # DEBUG
 		for m in ${!monitorName[@]}
 		do
@@ -1007,7 +1008,7 @@ do
 		declare -a profileName
 		blockEnd=$( echo "$virt" | tail -n +${profiles} | grep -m 1 -nE "^\s{4}}$" | cut -d ":" -f1 )
 		echo "Block end = $blockEnd"
-		read -a profileName <<< $( echo "$virt" | sed -n ${profiles},$(( profiles + blockEnd -1 ))p | grep -E "^\s{8}\/'${partition}'\/" | sed -e "s/\/'${partition}'\///g" -e "s/ [{}]//g" -e "s/^[[:space:]]*//g" \
+		read -a profileName <<< $( echo "$virt" | sed -n ${profiles},$(( profiles + blockEnd -1 ))p | grep -E "^\s{8}\/.*\/" | sed -e "s/\/.*\///g" -e "s/ [{}]//g" -e "s/^[[:space:]]*//g" \
 			-e "/^tcp$/d" -e "/^http$/d" -e "/^https$/d" -e "/^serverssl-insecure-compatible$/d" -e "/^tcp-lan-optimized$/d" -e "/^tcp-wan-optimized$/d" -e "/^clientssl-insecure-compatible$/d" -e "/^websecurity$/d"| tr '\n' ' ' )
 		#	read -a profileName <<< $( echo "$virt" | sed -n ${profiles},$(( profiles + blockEnd -1 ))p | grep -E "^\s{8}\/Common\/" | sed -e "s/\/Common\///g" -e "s/ { }\|{\| {//g" -e "s/^[[:space:]]*//g" \
 		#	-e "/^tcp$/d" -e "/^http$/d" -e "/^https$/d" -e "/^serverssl-insecure-compatible$/d" -e "/^tcp-lan-optimized$/d" -e "/^tcp-wan-optimized$/d" -e "/^clientssl-insecure-compatible$/d" | tr '\n' ' ' )
@@ -1057,7 +1058,7 @@ do
 	if [ $clonePool ]; then 
 		declare -a clonePoolName
 		clonePoolLines=$( echo "$virt" | tail -n +${clonePool} | grep -m 1 -nE "^\s{4}}$" | cut -d ":" -f1 )
-		read -a clonePoolName <<< $( echo "$virt" | sed -n ${clonePool},$(( clonePool + clonePoolLines -1 ))p | grep -E "\/'${partition}'\/" | sed -e "s/\/'${partition}'\///g" \
+		read -a clonePoolName <<< $( echo "$virt" | sed -n ${clonePool},$(( clonePool + clonePoolLines -1 ))p | grep -E "\/.*\/" | sed -e "s/\/.*\///g" \
 		-e "s/ [{}]//g" -e "s/[[:space:]]*//g" | sort | uniq | tr '\n' ' ' )
 
 		[ $DEBUG ] && echo -e "DEBUG - clonePoolName" && declare -p clonePoolName | tr ' ' '\n'
@@ -1079,7 +1080,7 @@ do
 	if [ $rule ]; then 
 		declare -a ruleName
 		ruleLines=$( echo "$virt" | tail -n +${rule} | grep -m 1 -nE "^\s{4}}$" | cut -d ":" -f1 )
-		read -a ruleName <<< $( echo "$virt" | sed -n ${rule},$(( rule + ruleLines -1 ))p | grep -E "\/'${partition}'\/" | sed -e "s/\/'${partition}'\///g" -e "s/^[[:space:]]*//g" | tr '\n' ' ' )
+		read -a ruleName <<< $( echo "$virt" | sed -n ${rule},$(( rule + ruleLines -1 ))p | grep -E "\/.*\/" | sed -e "s/\/.*\///g" -e "s/^[[:space:]]*//g" | tr '\n' ' ' )
 		
 		[ $DEBUG ] && echo -e "DEBUG - ruleName" &&  declare -p ruleName | tr " " "\n" # debug
 		
@@ -1123,7 +1124,7 @@ do
 	if [ $policy ]; then
 		declare -a policNames
 		policyEnd=$( echo "$virt" | tail -n +${policy} | grep -m 1 -nE "^\s{4}}" | cut -d ":" -f 1 )
-		read -a policyNames <<< $( echo "$virt" | sed -n ${policy},$(( policy + policyEnd -2 ))p | sed -e 's,^[[:space:]]\+,,g' -e 's,/'${partition}'/,,g' -e 's, { },,g' -e 's, [{}],,g' | tr '\n' ' ' )
+		read -a policyNames <<< $( echo "$virt" | sed -n ${policy},$(( policy + policyEnd -2 ))p | sed -e 's,^[[:space:]]\+,,g' -e 's,/.*/,,g' -e 's, { },,g' -e 's, [{}],,g' | tr '\n' ' ' )
 		#read -a policyNames <<< $( echo "$virt" | sed -n ${policy},$(( policy + policyEnd -2 ))p | sed -e 's,^[[:space:]]\+,,g' -e 's,/Common/,,g' -e 's, { },,g' -e 's, {\| },,g' | tr '\n' ' ' )
 		
 		[ $DEBUG ] && echo -e "DEBUG - policyNames" &&  declare -p policyNames | tr " " "\n" # debug 
@@ -1180,7 +1181,7 @@ do
 			[ $DEBUG ] && echo -e "DEBUG - last hop pool Start,End - ${poolArray[$lastHopPool]}"
 			sed -n ${poolArray[$lastHopPool]}p "${iAppFreeConfFile}" | sed -e "s/[\_a-zA-Z0-9\-]\+\.app\///g" >> "$vsFileName"
 			
-			read -a monitorName <<< $( sed -n ${poolArray[$lastHopPool]}p ${iAppFreeConfFile} | grep -E "^\s{4,12}monitor\s" | sed -e "s/^\s\{4,12\}monitor\s//g;s/min \(.*\) of //g" -e "s,[{}],,g" -e "s/\/'${partition}'\///g" -e "s/ and//g" -e "s/^[[:space:]]*//g" -e "s/ *$//g" | tr " " "\n" | sort | uniq | tr '\n' ' ' )
+			read -a monitorName <<< $( sed -n ${poolArray[$lastHopPool]}p ${iAppFreeConfFile} | grep -E "^\s{4,12}monitor\s" | sed -e "s/^\s\{4,12\}monitor\s//g;s/min \(.*\) of //g" -e "s,[{}],,g" -e "s/\/.*\///g" -e "s/ and//g" -e "s/^[[:space:]]*//g" -e "s/ *$//g" | tr " " "\n" | sort | uniq | tr '\n' ' ' )
 			#read -a monitorName <<< $( sed -n ${poolArray[$lastHopPool]}p ${iAppFreeConfFile} | grep -E "^\s{4,12}monitor\s" | sed -e "s/^\s\{4,12\}monitor\s//g;s/min \(.*\) of //g" -e "s,{\|},,g" -e "s/\/Common\///g" -e "s/ and//g" -e "s/^[[:space:]]*//g" -e "s/ *$//g" | tr " " "\n" | sort | uniq | tr '\n' ' ' )
 			[ $DEBUG ] && echo -e "DEBUG - monitorName" && declare -p monitorName | tr ' ' '\n' # DEBUG
 			for m in ${!monitorName[@]}
