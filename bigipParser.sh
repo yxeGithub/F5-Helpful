@@ -26,13 +26,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
 #
-#########################################################################
-#																		#
-# ver. 0.10																#
-# ver. 0.20   Denis F5 - YXESE - Modified to work on OSX and updates    #
-# ver. 0.21	  Denis F5 - YXESE - Modified to change Declare -A; not -a  #
-# ver. 0.22	  Denis F5 - YXESE - Modified to work with partitions		#
-#																		#
+###########################################################################################################
+#                                                                                                         #
+# ver. 0.10                                                                                               #
+# ver. 0.20       Denis F5 - YXESE - Modified to work on OSX and updates.                                 #
+# ver. 0.21	  Denis F5 - YXESE - Modified to change Declare -A; not -a                                #
+# ver. 0.22	  Denis F5 - YXESE - Modified to work with partitions                                     #
+#                                                                                                         #
 #########################################################################
 # ****************************** Important ******************************
 
@@ -85,7 +85,7 @@ declare -A poolArray				#OK
 declare -A monitorArray				#OK
 declare -A policyArray				#OK
 declare -A iruleArray				#OK
-declare -A snatTranslationArray		#OK
+declare -A snatTranslationArray		        #OK
 declare -A snatPoolArray			#OK
 declare -A dataGroupArray			#OK
 declare -A persistArray				#OK
